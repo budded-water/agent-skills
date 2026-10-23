@@ -1,7 +1,8 @@
 # agent-skills
 
-Personal cross-project skills for Claude Code and Codex. This migration candidate
-is local and unpublished. Source redistribution authorization is pending.
+Personal cross-project skills for Claude Code and Codex. The initial migration contains
+two skills adapted from BeFreed-ai/freed_skills under the MIT license.
+See [NOTICE.md](NOTICE.md) for attribution and [LICENSE](LICENSE) for terms.
 
 ## Scope
 
@@ -19,7 +20,7 @@ The first batch contains:
 - `claude-code-project-context`: reads existing project knowledge without
   modifying Claude configuration. Instructions only; no runtime dependency.
 
-## Installation candidate
+## Installation
 
 Requires Python 3.10+ and git. No package installation is required for the installer.
 Use a clean checkout at a reviewed full commit. Select the target and each skill
@@ -36,7 +37,8 @@ Start with an isolated target. This does not switch any existing installation.
 For later activation, inspect the client's actual skill discovery configuration
 and same-named installations first; do not assume a universal install directory.
 The installer never edits hooks, MCP configuration, credentials or permissions.
-It records commit and file hashes, is idempotent for an identical owned copy,
+It includes LICENSE and NOTICE.md in each installed copy, records commit and
+file hashes, is idempotent for an identical owned copy,
 and refuses foreign, modified, symlinked or different-version destinations.
 This first version deliberately has no in-place upgrade/uninstall command.
 For an upgrade, stage to a new target, review it and explicitly replace the old
@@ -45,7 +47,7 @@ installation after preserving its source marker and any local edits.
 ## Source transition
 
 `provenance.json` records the source checkout commit and original file hashes.
-`NOTICE.md` records attribution and the pending permission boundary.
+`NOTICE.md` records attribution and the owner-confirmed redistribution permission.
 The existing freed_skills checkout remains the operational source until the
 new package is published, reviewed and explicitly adopted. No live installation
 or existing review workflow has been switched by preparing this candidate.
@@ -54,6 +56,7 @@ The proposed compatibility transition is described in `MIGRATION.md`.
 ## Validation
 
 ```sh
+python3 -m pip install -r requirements-dev.txt
 python3 -m pytest tests -q
 bash -n skills/pr-review-preflight/preflight.sh
 ```

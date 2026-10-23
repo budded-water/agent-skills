@@ -11,6 +11,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "budded-water/agent-skills"
 MARKER = ".agent-skills-installation.json"
+NOTICES = ("LICENSE", "NOTICE.md")
 
 
 def git(*args):
@@ -44,6 +45,11 @@ def install(target, names, commit, apply=False):
     for name in names:
         source, destination = ROOT / "skills" / name, target / name
         digest = hashes(source)
+        for notice in NOTICES:
+            path = ROOT / notice
+            if path.is_symlink():
+                raise ValueError(f"Refusing symlinked notice: {path}")
+            digest[notice] = hashlib.sha256(path.read_bytes()).hexdigest()
         marker = {"package": PACKAGE, "sourceCommit": commit, "skill": name, "sha256": digest}
         if destination.is_symlink():
             raise ValueError(f"Refusing existing symlink: {destination}")
@@ -67,6 +73,8 @@ def install(target, names, commit, apply=False):
                 with tempfile.TemporaryDirectory(prefix=".agent-skills-stage-", dir=target) as stage:
                     copied = Path(stage) / name
                     shutil.copytree(ROOT / "skills" / name, copied)
+                    for notice in NOTICES:
+                        shutil.copyfile(ROOT / notice, copied / notice)
                     (copied / MARKER).write_text(json.dumps(marker, indent=2) + "\n")
                     destination = target / name
                     if destination.exists() or destination.is_symlink():

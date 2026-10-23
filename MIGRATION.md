@@ -1,10 +1,13 @@
 # First-batch migration and compatibility plan
 
-Status: prepared locally; no operational source switch or upstream change.
+Status: first-batch redistribution authorized under MIT; operational source
+transition and upstream compatibility changes remain pending.
 
-1. Confirm permission to publicly redistribute the inherited skills and tests,
-   with an agreed license. Verify the accessible upstream head and reconcile any
-   changes after the provenance revision before proposing the source transition.
+1. First-batch redistribution under MIT was explicitly authorized by the owner
+   on 2026-10-23; see NOTICE.md. Before proposing the operational source
+   transition, verify the accessible upstream head and reconcile changes after
+   the provenance revision. This candidate was prepared from the recorded local
+   source; current remote upstream access was unavailable.
 2. Create the authorized personal repository with a minimal default-branch
    baseline. Deliver the actual package on a topic branch through a PR. Review
    and validate it before any authorized merge; never use bootstrap to publish

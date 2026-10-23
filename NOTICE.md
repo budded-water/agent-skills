@@ -1,16 +1,22 @@
-# Source and redistribution status
+# Source and redistribution
 
-The initial two skills and preflight regression tests were adapted from
+The initial two skills and generic preflight regression cases were adapted from
 BeFreed-ai/freed_skills. See provenance.json for source paths, revision and hashes.
-Git history records contributions from zw and YuZhang71, including Codex-assisted
-work. This attribution does not assert personal ownership or a license grant.
+Upstream Git history records contributions from zw and YuZhang71, including
+Codex-assisted work. This repository preserves that attribution; its flattened
+migration history is not a claim that all inherited content was created here.
 
-No repository-level LICENSE was found in the inspected source checkout. Access
-to the source is not treated as permission to redistribute it. Do not publish
-this candidate or apply a new license to inherited content until redistribution
-rights and the intended license have been confirmed. Preserve upstream history
-and attribution when establishing the published source.
+No repository-level LICENSE was found in the inspected source checkout. On
+2026-10-23 the repository owner explicitly confirmed the right to publicly
+redistribute these two skills and their related tests, including other
+contributors' changes, under the MIT license. This package relies on that
+confirmation, rather than inferring permission from source access or authorship.
+This confirmation covers this first batch, not unrelated upstream skills.
 
 Migration adaptations: remove automatic GitHub account switching, document
 installation-relative helper lookup, remove the Freed-specific update command,
-and relocate generic preflight regression cases, excluding Freed wrapper-specific tests. Fixture names are generalized and an auth-switch regression is added.
+and relocate generic preflight regression cases while excluding Freed wrapper
+tests. Fixture names are generalized and an auth-switch regression is added.
+
+The installer and its tests are new work in agent-skills. Existing operational
+installations and the upstream repository have not been switched by this PR.

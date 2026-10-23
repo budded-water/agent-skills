@@ -1,7 +1,7 @@
 {
   "sourceRepository": "https://github.com/BeFreed-ai/freed_skills",
   "sourceCommit": "6fa7613a0f3fd4a9dcbf49b9c20ed2bc9d8ed414",
-  "publicationStatus": "pending source redistribution authorization; no license grant inferred",
+  "publicationStatus": "owner-authorized public redistribution under MIT",
   "skills": [
     {
       "skill": "pr-review-preflight",
@@ -23,5 +23,11 @@
     "path": "requesting-slack-bot-review/tests/test_preflight.py",
     "sha256": "56754dd477befcffff677a5b264bd2aa534d05f6dcd25bf147fbdd533dc24840",
     "scope": "Generic gate regression cases only; Freed wrapper-specific cases excluded. Fixture repository names generalized; auth-switch regression added."
+  },
+  "authorization": {
+    "date": "2026-10-23",
+    "basis": "Explicit repository-owner confirmation in the migration session",
+    "scope": "The two listed skills and related tests, including inherited contributions",
+    "license": "MIT"
   }
 }

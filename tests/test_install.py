@@ -17,8 +17,10 @@ def source(tmp_path, monkeypatch):
         path = root / "skills" / name
         path.mkdir(parents=True)
         (path / "SKILL.md").write_text(f"skill {name}\n")
+    for notice in installer.NOTICES:
+        (root / notice).write_text(f"fixture {notice}\n")
     subprocess.run(["git", "init", "-q", str(root)], check=True)
-    subprocess.run(["git", "-C", str(root), "add", "skills"], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "skills", *installer.NOTICES], check=True)
     subprocess.run(["git", "-C", str(root), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "fixture"], check=True)
     monkeypatch.setattr(installer, "ROOT", root)
     return root, installer.git("rev-parse", "HEAD"), tmp_path / "target"
@@ -31,6 +33,9 @@ def test_plan_has_no_writes_and_install_records_pin(source):
     installer.install(target, ["first"], commit, True)
     record = json.loads((target / "first" / installer.MARKER).read_text())
     assert record["sourceCommit"] == commit
+    for notice in installer.NOTICES:
+        assert (target / "first" / notice).read_bytes() == (root / notice).read_bytes()
+        assert notice in record["sha256"]
     assert (target / "first/SKILL.md").read_bytes() == (root / "skills/first/SKILL.md").read_bytes()
     assert installer.install(target, ["first"], commit, True)[0]["action"] == "unchanged"
 
