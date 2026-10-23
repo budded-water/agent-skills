@@ -40,6 +40,12 @@ Repositories that intentionally have no CI may use `--allow-no-checks` with a
 specific reason. This only overrides the absence of a check suite; pending or
 failing checks still block. Do not use it when checks are expected but missing.
 
+After fetching, the gate requires `origin/<base>` to match the base commit
+observed on the target PR through GitHub. This blocks a stale fork base even
+when `gh` selects upstream through `GH_REPO` or a default-repository setting.
+If they differ, correct/fetch the target base and retry; the gate never changes
+remote configuration automatically.
+
 Base drift is a warning by default. The script automatically upgrades it to a
 block when the PR and base-only changes overlap on an exact path, or both sides
 touch common high-risk files such as migrations, schemas, API contracts,

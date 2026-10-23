@@ -38,7 +38,7 @@ For later activation, inspect the client's actual skill discovery configuration
 and same-named installations first; do not assume a universal install directory.
 The installer never edits hooks, MCP configuration, credentials or permissions.
 It includes LICENSE and NOTICE.md in each installed copy, records commit and
-file hashes, checks source bytes against Git objects at the requested commit,
+file hashes, checks source bytes and executable flags against Git objects at the requested commit,
 verifies the staged copy before activation, is idempotent for an identical owned copy,
 and refuses foreign, modified, symlinked or different-version destinations.
 Ignored extra files within a selected skill and edits hidden from git status

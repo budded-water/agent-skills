@@ -16,7 +16,9 @@ This confirmation covers this first batch, not unrelated upstream skills.
 Migration adaptations: remove automatic GitHub account switching, document
 installation-relative helper lookup, remove the Freed-specific update command,
 and relocate generic preflight regression cases while excluding Freed wrapper
-tests. Fixture names are generalized and an auth-switch regression is added.
+tests. Fixture names are generalized, and regression coverage includes
+authentication preservation, verified target-base snapshots and executable
+permission integrity during installation.
 
 The installer and its tests are new work in agent-skills. Existing operational
 installations and the upstream repository have not been switched by this PR.

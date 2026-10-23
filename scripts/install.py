@@ -28,7 +28,7 @@ def hashes(directory, *, skip_marker=False):
     return result
 
 
-def pinned_hashes(commit, *paths):
+def pinned_files(commit, *paths):
     entries = subprocess.check_output([
         "git", "-C", str(ROOT), "ls-tree", "-rz", "--full-tree", commit, "--", *paths,
     ])
@@ -41,8 +41,15 @@ def pinned_hashes(commit, *paths):
         if mode not in ("100644", "100755") or kind != "blob":
             raise ValueError("Only regular files can be installed from the pinned commit")
         content = subprocess.check_output(["git", "-C", str(ROOT), "cat-file", "blob", oid])
-        result[path.decode("utf-8")] = hashlib.sha256(content).hexdigest()
+        result[path.decode("utf-8")] = {
+            "sha256": hashlib.sha256(content).hexdigest(),
+            "executable": mode == "100755",
+        }
     return result
+
+
+def executable_flags(directory, names):
+    return {name: bool((directory / name).stat().st_mode & 0o100) for name in names}
 
 
 def install(target, names, commit, apply=False):
@@ -64,27 +71,33 @@ def install(target, names, commit, apply=False):
         if source.is_symlink():
             raise ValueError(f"Refusing symlinked source: {source}")
         prefix = f"skills/{name}/"
-        expected = pinned_hashes(commit, prefix)
-        digest = {path.removeprefix(prefix): value for path, value in expected.items()}
-        if "SKILL.md" not in digest or hashes(source) != digest:
+        expected = pinned_files(commit, prefix)
+        digest = {path.removeprefix(prefix): value["sha256"] for path, value in expected.items()}
+        executable = {path.removeprefix(prefix): value["executable"] for path, value in expected.items()}
+        if ("SKILL.md" not in digest or hashes(source) != digest
+                or executable_flags(source, digest) != executable):
             raise ValueError(f"Source files differ from the pinned commit: {name}")
         if set(digest) & {MARKER, *NOTICES}:
             raise ValueError(f"Reserved installation filename in skill: {name}")
-        expected_notices = pinned_hashes(commit, *NOTICES)
+        expected_notices = pinned_files(commit, *NOTICES)
         for notice in NOTICES:
             path = ROOT / notice
             if path.is_symlink():
                 raise ValueError(f"Refusing symlinked notice: {path}")
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
-            if actual != expected_notices.get(notice):
+            if (actual != expected_notices.get(notice, {}).get("sha256")
+                    or executable_flags(ROOT, [notice])[notice]
+                    != expected_notices.get(notice, {}).get("executable")):
                 raise ValueError(f"Notice differs from the pinned commit: {notice}")
             digest[notice] = actual
-        marker = {"package": PACKAGE, "sourceCommit": commit, "skill": name, "sha256": digest}
+            executable[notice] = expected_notices[notice]["executable"]
+        marker = {"package": PACKAGE, "sourceCommit": commit, "skill": name, "sha256": digest, "executable": executable}
         if destination.is_symlink():
             raise ValueError(f"Refusing existing symlink: {destination}")
         if destination.exists():
             existing = json.loads((destination / MARKER).read_text())
-            if existing != marker or hashes(destination, skip_marker=True) != digest:
+            if (existing != marker or hashes(destination, skip_marker=True) != digest
+                    or executable_flags(destination, digest) != executable):
                 raise ValueError(f"Refusing overwrite of different or modified installation: {destination}")
             plan.append((name, "unchanged", marker))
         else:
@@ -104,7 +117,8 @@ def install(target, names, commit, apply=False):
                     shutil.copytree(ROOT / "skills" / name, copied)
                     for notice in NOTICES:
                         shutil.copyfile(ROOT / notice, copied / notice)
-                    if hashes(copied) != marker["sha256"]:
+                    if (hashes(copied) != marker["sha256"]
+                            or executable_flags(copied, marker["sha256"]) != marker["executable"]):
                         raise ValueError(f"Staged files differ from the pinned commit: {name}")
                     (copied / MARKER).write_text(json.dumps(marker, indent=2) + "\n")
                     destination = target / name

@@ -17,6 +17,9 @@ def source(tmp_path, monkeypatch):
         path = root / "skills" / name
         path.mkdir(parents=True)
         (path / "SKILL.md").write_text(f"skill {name}\n")
+        helper = path / "helper.sh"
+        helper.write_text("#!/bin/sh\nexit 0\n")
+        helper.chmod(0o755)
     for notice in installer.NOTICES:
         (root / notice).write_text(f"fixture {notice}\n")
     subprocess.run(["git", "init", "-q", str(root)], check=True)
@@ -137,6 +140,43 @@ def test_source_changes_during_copy_roll_back_entire_batch(source, monkeypatch):
         copied = original(source, destination)
         if source.name == "second":
             (destination / "SKILL.md").write_text("changed during copy")
+        return copied
+
+    monkeypatch.setattr(installer.shutil, "copytree", copy)
+    with pytest.raises(ValueError, match="pinned commit"):
+        installer.install(target, ["first", "second"], commit, True)
+    assert list(target.iterdir()) == []
+
+
+
+def test_installed_helper_losing_execute_permission_is_not_valid(source):
+    _, commit, target = source
+    installer.install(target, ["first"], commit, True)
+    helper = target / "first/helper.sh"
+    assert subprocess.run([str(helper)]).returncode == 0
+    helper.chmod(0o644)
+    with pytest.raises(ValueError, match="overwrite"):
+        installer.install(target, ["first"], commit, True)
+
+
+def test_hidden_source_executable_change_is_refused(source):
+    root, commit, target = source
+    subprocess.run(["git", "-C", str(root), "config", "core.filemode", "false"], check=True)
+    (root / "skills/first/helper.sh").chmod(0o644)
+    assert installer.git("status", "--porcelain") == ""
+    with pytest.raises(ValueError, match="pinned commit"):
+        installer.install(target, ["first"], commit, True)
+    assert not target.exists()
+
+
+def test_staged_executable_change_rolls_back(source, monkeypatch):
+    _, commit, target = source
+    original = installer.shutil.copytree
+
+    def copy(source, destination):
+        copied = original(source, destination)
+        if source.name == "second":
+            (destination / "helper.sh").chmod(0o644)
         return copied
 
     monkeypatch.setattr(installer.shutil, "copytree", copy)

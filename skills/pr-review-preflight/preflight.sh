@@ -48,7 +48,7 @@ fi
 
 q=$(gh api graphql --paginate --slurp -f query='
 query($owner:String!,$repo:String!,$num:Int!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$num){
-  baseRefName headRefOid mergeable isDraft state merged
+  baseRefName baseRefOid headRefOid mergeable isDraft state merged
   reviewThreads(first:100,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{
     isResolved isOutdated comments(first:1){nodes{author{login} path url body}}
   }}
@@ -61,6 +61,7 @@ query($owner:String!,$repo:String!,$num:Int!,$endCursor:String){repository(owner
 jq_() { jq -r "$1" <<<"$q"; }
 
 BASE=$(jq_ '.[0].data.repository.pullRequest.baseRefName')
+BASE_OID=$(jq_ '.[0].data.repository.pullRequest.baseRefOid')
 CI=$(jq_ '.[0].data.repository.pullRequest.commits.nodes[0].commit.statusCheckRollup.state // "NONE"')
 HEAD_OID=$(jq_ '.[0].data.repository.pullRequest.headRefOid')
 DRAFT=$(jq_ '.[0].data.repository.pullRequest.isDraft')
@@ -112,7 +113,12 @@ drift_analysis_unavailable() {
 
 FETCH_OK=1
 git fetch origin -q 2>/dev/null || FETCH_OK=0
-if [ "$FETCH_OK" = "1" ] && git cat-file -e "$HEAD_OID" 2>/dev/null; then
+LOCAL_BASE_OID=$(git rev-parse "origin/$BASE" 2>/dev/null || echo "")
+if [ "$FETCH_OK" = "1" ] && { [ -z "$BASE_OID" ] || [ "$BASE_OID" = "null" ] || [ "$LOCAL_BASE_OID" != "$BASE_OID" ]; }; then
+  # gh may select upstream while origin is a fork. A successful fetch alone
+  # does not prove this ref is the API target's observed base.
+  bad "base snapshot" "origin/$BASE differs from the target PR base — fetch the target base or correct the remote, then retry"
+elif [ "$FETCH_OK" = "1" ] && git cat-file -e "$HEAD_OID" 2>/dev/null; then
   BEHIND=$(git rev-list --count "$HEAD_OID..origin/$BASE" 2>/dev/null || echo "?")
   if [ "$BEHIND" = "0" ]; then
     note "behind base" "0"

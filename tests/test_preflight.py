@@ -1,6 +1,8 @@
 import json
 import os
 import subprocess
+
+import pytest
 from pathlib import Path
 
 
@@ -27,6 +29,7 @@ def run_preflight(
     mergeable="MERGEABLE",
     pr_state="OPEN",
     cwd_repo="example/project",
+    local_base_oid="b" * 40,
 ):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir(exist_ok=True)
@@ -61,7 +64,7 @@ def run_preflight(
         "      *origin/main) printf '%s\\n' \"$GIT_BASE_CHANGED_PATHS\" ;;\n"
         "    esac\n"
         "    ;;\n"
-        "  rev-parse) echo \"$GH_HEAD\" ;;\n"
+        "  rev-parse) [ \"$2\" = origin/main ] && echo \"$GIT_BASE_OID\" || echo \"$GH_HEAD\" ;;\n"
         "esac\n"
     )
     for executable in (bin_dir / "gh", bin_dir / "git"):
@@ -86,7 +89,7 @@ def run_preflight(
                 "detailsUrl": "https://vercel.example/preview",
             })
         return {"data": {"repository": {"pullRequest": {
-            "baseRefName": "main", "headRefOid": HEAD, "isDraft": False,
+            "baseRefName": "main", "baseRefOid": "b" * 40, "headRefOid": HEAD, "isDraft": False,
             "state": pr_state, "merged": pr_state == "MERGED", "mergeable": mergeable,
             "reviewThreads": {"nodes": nodes},
             "commits": {"nodes": [{"commit": {"statusCheckRollup": None
@@ -110,6 +113,7 @@ def run_preflight(
         "GH_GRAPHQL": payload,
         "GH_CALL_LOG": str(tmp_path / "gh-calls.log"),
         "GH_HEAD": HEAD,
+        "GIT_BASE_OID": local_base_oid,
         "GIT_TRACKED_DIRTY": "1" if tracked_dirty else "0",
         "GIT_UNTRACKED": "1" if untracked else "0",
         "GIT_FETCH_FAILS": "1" if fetch_fails else "0",
@@ -356,3 +360,81 @@ def test_does_not_switch_global_authentication(tmp_path):
     result = run_preflight(tmp_path, "SUCCESS")
     assert result.returncode == 0
     assert "auth switch" not in (tmp_path / "gh-calls.log").read_text()
+
+
+
+def test_successful_fetch_of_wrong_base_cannot_pass(tmp_path):
+    result = run_preflight(tmp_path, "SUCCESS", local_base_oid="c" * 40)
+    assert result.returncode == 1
+    assert "base snapshot" in result.stdout
+    assert "differs from the target PR base" in result.stdout
+
+
+
+@pytest.mark.parametrize("strict", [False, True])
+def test_real_fork_base_cannot_masquerade_as_target_base(tmp_path, strict):
+    # Only GitHub is a fixture here. All commits, remotes, fetches and drift
+    # comparisons use real local Git repositories, with no network access.
+    upstream, fork = tmp_path / "upstream.git", tmp_path / "fork.git"
+    seed, checkout = tmp_path / "seed", tmp_path / "checkout"
+
+    def git(cwd, *args):
+        return subprocess.check_output([
+            "git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+            "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null",
+            "-C", str(cwd), *args,
+        ], text=True, stderr=subprocess.PIPE).strip()
+
+    for bare in (upstream, fork):
+        git(tmp_path, "init", "--bare", "-q", str(bare))
+    git(tmp_path, "init", "-q", "-b", "main", str(seed))
+    (seed / "shared.txt").write_text("initial\n")
+    git(seed, "add", "shared.txt")
+    git(seed, "commit", "-qm", "initial base")
+    git(seed, "push", str(upstream), "main")
+    git(seed, "push", str(fork), "main")
+    git(seed, "switch", "-c", "feature")
+    (seed / "shared.txt").write_text("candidate\n")
+    git(seed, "commit", "-qam", "candidate")
+    candidate = git(seed, "rev-parse", "HEAD")
+    git(seed, "push", str(upstream), "feature")
+    git(seed, "switch", "main")
+    (seed / "shared.txt").write_text("new target base\n")
+    git(seed, "commit", "-qam", "overlapping target change")
+    target_base = git(seed, "rev-parse", "HEAD")
+    git(seed, "push", str(upstream), "main")
+    git(tmp_path, "clone", "-q", "--branch", "main", str(fork), str(checkout))
+    git(checkout, "fetch", str(upstream), "feature")
+    git(checkout, "checkout", "--detach", "FETCH_HEAD")
+    assert git(checkout, "rev-list", "--count", "HEAD..origin/main") == "0"
+
+    payload = [{"data": {"repository": {"pullRequest": {
+        "baseRefName": "main", "baseRefOid": target_base, "headRefOid": candidate,
+        "isDraft": False, "state": "OPEN", "merged": False, "mergeable": "MERGEABLE",
+        "reviewThreads": {"nodes": []},
+        "commits": {"nodes": [{"commit": {"statusCheckRollup": {
+            "state": "SUCCESS", "contexts": {"nodes": []},
+        }}}]},
+    }}}}]
+    bin_dir = tmp_path / "github-fixture"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text(
+        "#!/bin/sh\n"
+        "case \"$1 $2\" in\n"
+        "  'repo view') echo example/upstream ;;\n"
+        "  'api graphql') printf '%s\\n' \"$GH_GRAPHQL\" ;;\n"
+        "  *) exit 1 ;;\n"
+        "esac\n"
+    )
+    gh.chmod(0o755)
+    arguments = ["--require-current-base", "target base is required"] if strict else []
+    result = subprocess.run(
+        [str(SCRIPT), *arguments, "1", "example/upstream"], cwd=checkout,
+        env=os.environ | {"PATH": f"{bin_dir}:{os.environ['PATH']}",
+                          "GH_REPO": "example/upstream", "GH_GRAPHQL": json.dumps(payload)},
+        text=True, capture_output=True,
+    )
+    assert result.returncode == 1, result.stdout
+    assert "base snapshot" in result.stdout
+    assert "PREFLIGHT(generic) PASS" not in result.stdout
