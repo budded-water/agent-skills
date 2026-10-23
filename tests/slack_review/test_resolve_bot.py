@@ -1,11 +1,13 @@
 import datetime as dt
 import json
 import os
+from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
-from .helpers import SKILL
+from .helpers import SKILL, stage_pair
 
 
 def resolver_env(tmp_path, *, github_fails=False, invalid_slack=False, host_is_bot=False, observed_at=None):
@@ -86,3 +88,22 @@ def test_empty_bundled_registry_has_no_workspace_identity_defaults(tmp_path):
     result = resolve(env, "--require-github", "example-reviewer")
     assert result.returncode != 0
     assert json.loads((SKILL / "references/reviewer-capabilities.json").read_text()) == {"reviewers": {}}
+
+
+def test_updating_workspace_observations_changes_resolution_without_invalidating_installation(tmp_path):
+    installed = stage_pair(tmp_path)
+    env = resolver_env(tmp_path)
+    checker = [sys.executable, str(installed / "check_installation.py")]
+    command = [str(installed / "resolve_bot.sh"), "--json", "example-reviewer"]
+    before = subprocess.run(command, env=env, capture_output=True, text=True)
+    assert before.returncode == 0, before.stderr
+    assert json.loads(before.stdout)["slack_user_id"] == "U000BOT"
+    registry = Path(env["SLACK_REVIEW_CAPABILITIES"])
+    data = json.loads(registry.read_text())
+    data["reviewers"]["example-reviewer"]["slack_user_id"] = "U000NEXT"
+    registry.write_text(json.dumps(data))
+    after = subprocess.run(command, env=env, capture_output=True, text=True)
+    assert after.returncode == 0, after.stderr
+    assert json.loads(after.stdout)["slack_user_id"] == "U000NEXT"
+    integrity = subprocess.run(checker, env=env, capture_output=True, text=True)
+    assert integrity.returncode == 0, integrity.stderr

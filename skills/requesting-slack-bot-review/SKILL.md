@@ -572,11 +572,12 @@ are watched automatically, and concurrency behavior. Use a workspace adapter
 or live evidence to select the request mode. Do not infer capability from a bot
 name or from one successful Slack post.
 
-Store shared observations using
-[references/reviewer-capabilities.json](references/reviewer-capabilities.json)
-and its
+Store and refresh shared observations in the external workspace registry selected
+by `SLACK_REVIEW_CAPABILITIES`. Follow
 [references/reviewer-capabilities.schema.json](references/reviewer-capabilities.schema.json)
-and validate the file with `scripts/validate_capabilities.py`. Refresh stale
+and validate that external file with `scripts/validate_capabilities.py`. The
+bundled `references/reviewer-capabilities.json` is an empty immutable default;
+never write live observations into the installed package. Refresh stale external
 observations before relying on them for sender identity or result-ledger choice.
 Record `structured_output` as `supported`, `not_observed`, or `unknown`; a
 missing field in a legacy capability record is `unknown`, while a
