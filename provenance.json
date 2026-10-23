@@ -1,0 +1,33 @@
+{
+  "sourceRepository": "https://github.com/BeFreed-ai/freed_skills",
+  "sourceCommit": "6fa7613a0f3fd4a9dcbf49b9c20ed2bc9d8ed414",
+  "publicationStatus": "owner-authorized public redistribution under MIT",
+  "skills": [
+    {
+      "skill": "pr-review-preflight",
+      "sourcePath": "pr-review-preflight",
+      "sourceFilesSha256": {
+        "pr-review-preflight/preflight.sh": "635aedbe17a94a89e4e449faf4d92300c271dcd8a494d71f556647e26cf9ddce",
+        "pr-review-preflight/SKILL.md": "a604142003963725ad890d01dc65b686a7307b4b6591c8c90b508a074c1f2a03"
+      }
+    },
+    {
+      "skill": "claude-code-project-context",
+      "sourcePath": "codex/skills/claude-code-project-context",
+      "sourceFilesSha256": {
+        "codex/skills/claude-code-project-context/SKILL.md": "b8d4b55af740246465fb553827b4fe7a3bd304aa18b475cbca0afc62dcb0365b"
+      }
+    }
+  ],
+  "testSource": {
+    "path": "requesting-slack-bot-review/tests/test_preflight.py",
+    "sha256": "56754dd477befcffff677a5b264bd2aa534d05f6dcd25bf147fbdd533dc24840",
+    "scope": "Generic gate regression cases only; Freed wrapper-specific cases excluded. Fixture repository names generalized; auth-switch regression added."
+  },
+  "authorization": {
+    "date": "2026-10-23",
+    "basis": "Explicit repository-owner confirmation in the migration session",
+    "scope": "The two listed skills and related tests, including inherited contributions",
+    "license": "MIT"
+  }
+}
