@@ -105,3 +105,41 @@ def test_active_install_lock_is_preserved(source):
         installer.install(target, ["first"], commit, True)
     assert (target / ".agent-skills-install.lock").is_dir()
     assert not (target / "first").exists()
+
+
+
+def test_ignored_extra_file_is_not_part_of_the_pin(source):
+    root, commit, target = source
+    (root / ".git/info/exclude").write_text("*.pyc\n")
+    (root / "skills/first/extra.pyc").write_bytes(b"not in reviewed commit")
+    assert installer.git("status", "--porcelain") == ""
+    with pytest.raises(ValueError, match="pinned commit"):
+        installer.install(target, ["first"], commit, True)
+    assert not target.exists()
+
+
+@pytest.mark.parametrize("relative", ["skills/first/SKILL.md", "LICENSE", "NOTICE.md"])
+def test_hidden_tracked_edit_does_not_bypass_the_pin(source, relative):
+    root, commit, target = source
+    subprocess.run(["git", "-C", str(root), "update-index", "--assume-unchanged", relative], check=True)
+    (root / relative).write_text("different content")
+    assert installer.git("status", "--porcelain") == ""
+    with pytest.raises(ValueError, match="pinned commit"):
+        installer.install(target, ["first"], commit, True)
+    assert not target.exists()
+
+
+def test_source_changes_during_copy_roll_back_entire_batch(source, monkeypatch):
+    _, commit, target = source
+    original = installer.shutil.copytree
+
+    def copy(source, destination):
+        copied = original(source, destination)
+        if source.name == "second":
+            (destination / "SKILL.md").write_text("changed during copy")
+        return copied
+
+    monkeypatch.setattr(installer.shutil, "copytree", copy)
+    with pytest.raises(ValueError, match="pinned commit"):
+        installer.install(target, ["first", "second"], commit, True)
+    assert list(target.iterdir()) == []

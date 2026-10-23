@@ -1,7 +1,9 @@
 # First-batch migration and compatibility plan
 
 Status: first-batch redistribution authorized under MIT; operational source
-transition and upstream compatibility changes remain pending.
+transition and upstream compatibility changes remain pending. See the
+[caller inventory and dependency contract](docs/freed-skills-integration.md)
+for the prepared upstream integration design.
 
 1. First-batch redistribution under MIT was explicitly authorized by the owner
    on 2026-10-23; see NOTICE.md. Before proposing the operational source

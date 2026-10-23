@@ -38,8 +38,12 @@ For later activation, inspect the client's actual skill discovery configuration
 and same-named installations first; do not assume a universal install directory.
 The installer never edits hooks, MCP configuration, credentials or permissions.
 It includes LICENSE and NOTICE.md in each installed copy, records commit and
-file hashes, is idempotent for an identical owned copy,
+file hashes, checks source bytes against Git objects at the requested commit,
+verifies the staged copy before activation, is idempotent for an identical owned copy,
 and refuses foreign, modified, symlinked or different-version destinations.
+Ignored extra files within a selected skill and edits hidden from git status
+are rejected. Keep skill directories free of generated files before installation.
+If a copy fails validation, newly installed skills from that batch are rolled back.
 This first version deliberately has no in-place upgrade/uninstall command.
 For an upgrade, stage to a new target, review it and explicitly replace the old
 installation after preserving its source marker and any local edits.

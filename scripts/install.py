@@ -18,13 +18,30 @@ def git(*args):
     return subprocess.check_output(["git", "-C", str(ROOT), *args], text=True).strip()
 
 
-def hashes(directory):
+def hashes(directory, *, skip_marker=False):
     result = {}
     for path in sorted(directory.rglob("*")):
         if path.is_symlink():
             raise ValueError(f"Refusing symlink: {path}")
-        if path.is_file() and path.name != MARKER:
+        if path.is_file() and not (skip_marker and path == directory / MARKER):
             result[path.relative_to(directory).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return result
+
+
+def pinned_hashes(commit, *paths):
+    entries = subprocess.check_output([
+        "git", "-C", str(ROOT), "ls-tree", "-rz", "--full-tree", commit, "--", *paths,
+    ])
+    result = {}
+    for entry in entries.split(b"\0"):
+        if not entry:
+            continue
+        metadata, path = entry.split(b"\t", 1)
+        mode, kind, oid = metadata.decode("ascii").split()
+        if mode not in ("100644", "100755") or kind != "blob":
+            raise ValueError("Only regular files can be installed from the pinned commit")
+        content = subprocess.check_output(["git", "-C", str(ROOT), "cat-file", "blob", oid])
+        result[path.decode("utf-8")] = hashlib.sha256(content).hexdigest()
     return result
 
 
@@ -44,18 +61,30 @@ def install(target, names, commit, apply=False):
     plan = []
     for name in names:
         source, destination = ROOT / "skills" / name, target / name
-        digest = hashes(source)
+        if source.is_symlink():
+            raise ValueError(f"Refusing symlinked source: {source}")
+        prefix = f"skills/{name}/"
+        expected = pinned_hashes(commit, prefix)
+        digest = {path.removeprefix(prefix): value for path, value in expected.items()}
+        if "SKILL.md" not in digest or hashes(source) != digest:
+            raise ValueError(f"Source files differ from the pinned commit: {name}")
+        if set(digest) & {MARKER, *NOTICES}:
+            raise ValueError(f"Reserved installation filename in skill: {name}")
+        expected_notices = pinned_hashes(commit, *NOTICES)
         for notice in NOTICES:
             path = ROOT / notice
             if path.is_symlink():
                 raise ValueError(f"Refusing symlinked notice: {path}")
-            digest[notice] = hashlib.sha256(path.read_bytes()).hexdigest()
+            actual = hashlib.sha256(path.read_bytes()).hexdigest()
+            if actual != expected_notices.get(notice):
+                raise ValueError(f"Notice differs from the pinned commit: {notice}")
+            digest[notice] = actual
         marker = {"package": PACKAGE, "sourceCommit": commit, "skill": name, "sha256": digest}
         if destination.is_symlink():
             raise ValueError(f"Refusing existing symlink: {destination}")
         if destination.exists():
             existing = json.loads((destination / MARKER).read_text())
-            if existing != marker or hashes(destination) != digest:
+            if existing != marker or hashes(destination, skip_marker=True) != digest:
                 raise ValueError(f"Refusing overwrite of different or modified installation: {destination}")
             plan.append((name, "unchanged", marker))
         else:
@@ -75,6 +104,8 @@ def install(target, names, commit, apply=False):
                     shutil.copytree(ROOT / "skills" / name, copied)
                     for notice in NOTICES:
                         shutil.copyfile(ROOT / notice, copied / notice)
+                    if hashes(copied) != marker["sha256"]:
+                        raise ValueError(f"Staged files differ from the pinned commit: {name}")
                     (copied / MARKER).write_text(json.dumps(marker, indent=2) + "\n")
                     destination = target / name
                     if destination.exists() or destination.is_symlink():
