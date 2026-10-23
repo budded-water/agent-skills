@@ -17,6 +17,50 @@
       "sourceFilesSha256": {
         "codex/skills/claude-code-project-context/SKILL.md": "b8d4b55af740246465fb553827b4fe7a3bd304aa18b475cbca0afc62dcb0365b"
       }
+    },
+    {
+      "skill": "requesting-slack-bot-review",
+      "sourcePath": "requesting-slack-bot-review",
+      "sourceCommit": "23336b179759f529cf4ea777fa71496650e41241",
+      "sourceStatus": "Clean local upstream merge snapshot. Remote main could not be verified via GitHub API (404) or configured SSH (repository unavailable).",
+      "sourceFilesSha256": {
+        "requesting-slack-bot-review/SKILL.md": "ebd1fa9e5b116b7922c1a3622dfb54277556689894b609b86810499286b806b3",
+        "requesting-slack-bot-review/check_installation.py": "70916ef6b000603e2aa58943d801cd1022eaf58bb7e0657e56aea1f462737700",
+        "requesting-slack-bot-review/preflight.sh": "8021c9738798c223318c3eda512a9cbe698c1ed2c9f97ac6858bd0e6c4d24c56",
+        "requesting-slack-bot-review/references/befreed-local-agents.md": "02ade388c8164c553eb3030cdb3f28b92e7477fab4b9f69344ef4d56efee933b",
+        "requesting-slack-bot-review/references/recovery-probes.json": "35c8297fb847b93e45c075d2bc2dacadad43f7ca37affedb0b0c54c4650678f4",
+        "requesting-slack-bot-review/references/review-retrospective.md": "670b56c5e1e6dce0e706dfe8911f07c5f8d82ae0571c51435393e4c1a3502782",
+        "requesting-slack-bot-review/references/review-state-contract.md": "c7eadcbbc9e1c458acf03699310a6834441c538f0609ebfb70b1135abca63199",
+        "requesting-slack-bot-review/references/reviewer-capabilities.json": "71dc92f35933fe8ae0bc3c58f03db510669ee03108dc87a0f25f5622542dbbfd",
+        "requesting-slack-bot-review/references/reviewer-capabilities.schema.json": "d735a474af9668b9620c715d5071fbc5f6ecbb6bfaa40131875e5e811a49bbc3",
+        "requesting-slack-bot-review/resolve_bot.sh": "948ce2486626e8270f30562b94f9bdf8c0df0dd2a3861a81572e6e72855e83e5",
+        "requesting-slack-bot-review/scripts/build_review_snapshot.py": "32728f4c72588a490f61cb8dd303e9f09a1e1d35956c57c1f239e36897ff965e",
+        "requesting-slack-bot-review/scripts/host_escalation_guard.py": "262cf1f912ecc227d3acd55187b6fb09008a8516a6f546f67602b36723dc8d2e",
+        "requesting-slack-bot-review/scripts/request_guard.py": "cdc6d3eec45e00cd1494bc1ac969f6f3c9119c32e854164e89bfcfc45e7b1317",
+        "requesting-slack-bot-review/scripts/review_round_budget.py": "be5ebb0fd0174a0ac7af26b2588fd8f79079b428afc2622b92d20fa171905cea",
+        "requesting-slack-bot-review/scripts/update_pr_body.py": "6807ff5553a3c3194ad38a038035db94e1fe23aec7f1d14c0df1bbf8a1fe296d",
+        "requesting-slack-bot-review/scripts/validate_capabilities.py": "696e837634f7472341ee3b5b7a3e8a76a678e9fd3de0c4522c6e8c8377d10763",
+        "requesting-slack-bot-review/scripts/watch_review.py": "0e3a2d05fd58b9620dc4a27f6e8511aa664cc9b0d6c38288fe702549644f7c00",
+        "requesting-slack-bot-review/scripts/workspace_probe.py": "05d0c7f159a35fea1b514d62375e2d10ba749b66d6bcc68615e947d124bd536c",
+        "requesting-slack-bot-review/tests/test_capabilities.py": "f270eb16d71ea46bf65b16f6497815c3afbd8893f3447893a0067883762a1966",
+        "requesting-slack-bot-review/tests/test_check_installation.py": "bbc9d2ca890f8825d4de103a7b2763587f8b8a3bf9a3a989560ab76cf0bba69d",
+        "requesting-slack-bot-review/tests/test_host_escalation_guard.py": "eb9d3338dff43fdb747744ec69e0be4e6ad31cd544ef359ba29ba9c2339cb472",
+        "requesting-slack-bot-review/tests/test_preflight.py": "56046f622fce2fb48f58819fe1beedc5494c3514f63797099c76832b82f723bc",
+        "requesting-slack-bot-review/tests/test_request_guard.py": "7089b91208ae7e2550ffda568df736cfda2d7e0895a1046b284428196df0342b",
+        "requesting-slack-bot-review/tests/test_request_template.py": "d7a0b33cfc4c62fe78ff3bd228f972052d111968106908314b594e3ad7763e7c",
+        "requesting-slack-bot-review/tests/test_resolve_bot.py": "356e15ece77ecd96fb1c52e426b5c360a7b334c2d4da6e929f5de12e57b659b4",
+        "requesting-slack-bot-review/tests/test_review_round_budget.py": "d54009cefcc44fb456e088ec8343a1cd1015cb0248cc2d833679583f2ab87267",
+        "requesting-slack-bot-review/tests/test_snapshot_builder.py": "c051902c97b3e9cf3f6806e5a55ee5e51fb07709b687e9c7c5b39d3b78265754",
+        "requesting-slack-bot-review/tests/test_update_pr_body.py": "12df8fc2ef3d350dfe577b599591ed2aa668ecaf2f51410f2302fb3f02259af1",
+        "requesting-slack-bot-review/tests/test_watch_review.py": "3c8ba48a28cd10948ba25c4b6c3cfdcf0d28cf5ad889a8c35506b053063a2321",
+        "requesting-slack-bot-review/tests/test_workspace_probe.py": "f4a3e7570d72787796fd057ff7e061cce95f5c7cdf7f26e027f640e480b66e26"
+      },
+      "adaptations": [
+        "Use recorded agent-skills installation integrity instead of implicit upstream refresh.",
+        "Resolve a same-pin sibling pr-review-preflight without changing GitHub auth.",
+        "Keep workspace identities external and read only explicitly supplied Slack credentials.",
+        "Retain generic review state, watcher, request guard, host recovery and regression coverage; omit the BeFreed workspace adapter."
+      ]
     }
   ],
   "testSource": {
@@ -29,5 +73,10 @@
     "basis": "Explicit repository-owner confirmation in the migration session",
     "scope": "The two listed skills and related tests, including inherited contributions",
     "license": "MIT"
+  },
+  "additionalMigrationAuthorization": {
+    "date": "2026-10-23",
+    "basis": "User explicitly requested migration of requesting-slack-bot-review into this MIT package, with no other additional skills.",
+    "scope": "requesting-slack-bot-review and its related helpers/tests only"
   }
 }

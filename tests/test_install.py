@@ -183,3 +183,37 @@ def test_staged_executable_change_rolls_back(source, monkeypatch):
     with pytest.raises(ValueError, match="pinned commit"):
         installer.install(target, ["first", "second"], commit, True)
     assert list(target.iterdir()) == []
+
+
+def add_review_pair(root):
+    import shutil
+    for name in ("pr-review-preflight", "requesting-slack-bot-review"):
+        shutil.copytree(root / "skills/first", root / "skills" / name)
+    subprocess.run(["git", "-C", str(root), "add", "skills"], check=True)
+    subprocess.run(["git", "-C", str(root), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "review pair"], check=True)
+    return installer.git("rev-parse", "HEAD")
+
+
+def test_review_dependency_is_explicit_and_missing_pair_makes_no_writes(source):
+    root, _, target = source
+    commit = add_review_pair(root)
+    with pytest.raises(ValueError, match="Select dependency pr-review-preflight explicitly"):
+        installer.install(target, ["requesting-slack-bot-review"], commit, True)
+    assert not target.exists()
+    installer.install(target, ["requesting-slack-bot-review", "pr-review-preflight"], commit, True)
+    assert installer.install(target, ["requesting-slack-bot-review"], commit, True)[0]["action"] == "unchanged"
+
+
+def test_review_dependency_at_another_pin_is_preserved_and_refused(source):
+    root, _, target = source
+    commit = add_review_pair(root)
+    installer.install(target, ["pr-review-preflight"], commit, True)
+    marker = target / "pr-review-preflight" / installer.MARKER
+    before = marker.read_bytes()
+    (root / "new-version.txt").write_text("new package version")
+    subprocess.run(["git", "-C", str(root), "add", "new-version.txt"], check=True)
+    subprocess.run(["git", "-C", str(root), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "new pin"], check=True)
+    with pytest.raises(ValueError, match="overwrite"):
+        installer.install(target, ["requesting-slack-bot-review"], installer.git("rev-parse", "HEAD"), True)
+    assert marker.read_bytes() == before
+    assert not (target / "requesting-slack-bot-review").exists()
