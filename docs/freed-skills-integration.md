@@ -1,6 +1,6 @@
 # Freed compatibility integration
 
-This is a design prepared against the source revision in provenance.json, not
+This is a design prepared against the source revisions in provenance.json, not
 an applied upstream change. Revalidate these callers against upstream before
 implementation. Current remote access was unavailable during preparation.
 Do not use the PR head as an operational dependency before an authorized merge.
@@ -11,15 +11,17 @@ Do not use the PR head as an operational dependency before an authorized merge.
 | --- | --- | --- |
 | install.sh | Links top-level Freed skill directories into the Claude skill root | Preserve the existing entry through a thin compatibility wrapper; resolve the pinned generic implementation |
 | scripts/install-codex-skills.js | Copies pr-review-preflight explicitly and discovers the Codex context skill under codex/skills | Install the verified external skills instead of copying duplicate implementations; retain unrelated skill selection and foreign-symlink refusal |
-| requesting-slack-bot-review/preflight.sh | Calls the generic gate through a fixed Claude installation path | Resolve the verified generic gate for the active installation, including Codex-only installations |
-| requesting-slack-bot-review/check_installation.py | Refreshes the Freed source and reinstalls both review skills | Validate the Freed revision and external package pin separately; refresh neither implicitly from an invocation |
+| requesting-slack-bot-review/preflight.sh | The old Freed copy uses a fixed Claude path; the packaged copy verifies a same-pin sibling | Adopt the verified external pair, including Codex-only installations; do not retain a second generic implementation |
+| requesting-slack-bot-review/check_installation.py | The old Freed copy refreshes source and reinstalls both review skills | Keep Freed source ownership separate from the packaged read-only integrity checker; perform updates explicitly |
+| requesting-slack-bot-review/resolve_bot.sh and reviewer capabilities | The Freed copy owns live workspace identities and private-client credential discovery | Keep business identities upstream, supply an explicit external registry/resolver and authorized credentials to the generic workflow |
 | docs/ai-agent-sync.md and README.md | Describe Freed as source for the currently shipped generic skills | Describe separate canonical owners, explicit update procedure and recovery |
 
 ## Proposed dependency contract
 
 Keep one machine-readable dependency manifest in freed_skills containing the
 agent-skills repository identity, a reviewed merged full commit, and the two
-selected skill names. Installer and refresh code consume that manifest; docs
+selected skill names, including the review workflow only when its adoption is
+authorized. Installer and refresh code consume that manifest; docs
 refer to it rather than repeating the commit. A missing or mismatched pin must
 fail before installation changes. Updating the dependency is an explicit PR.
 
@@ -38,7 +40,7 @@ upstream migration needs a separately reviewed adoption procedure: identify old
 ownership, preserve local edits and the old working targets, stage the new
 version, then explicitly switch the relevant entry points. A failed adoption
 must retain or restore the previous working installation. Never replace all
-skills or rerun hook/MCP setup as a side effect of adopting these two skills.
+skills or rerun hook/MCP setup as a side effect of adopting the selected skills.
 
 ## Validation required in the upstream PR
 

@@ -8,6 +8,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     strategy:
       matrix:
         python: ['3.10', '3.14']
@@ -20,3 +22,6 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pytest tests -q
       - run: bash -n skills/pr-review-preflight/preflight.sh
+      - run: bash -n skills/requesting-slack-bot-review/preflight.sh
+      - run: bash -n skills/requesting-slack-bot-review/resolve_bot.sh
+      - run: python skills/requesting-slack-bot-review/scripts/validate_capabilities.py skills/requesting-slack-bot-review/references/reviewer-capabilities.json

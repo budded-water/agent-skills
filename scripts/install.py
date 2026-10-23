@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "budded-water/agent-skills"
 MARKER = ".agent-skills-installation.json"
 NOTICES = ("LICENSE", "NOTICE.md")
+DEPENDENCIES = {"requesting-slack-bot-review": ("pr-review-preflight",)}
 
 
 def git(*args):
@@ -102,6 +103,13 @@ def install(target, names, commit, apply=False):
             plan.append((name, "unchanged", marker))
         else:
             plan.append((name, "install", marker))
+    # Dependencies are explicit; a previously installed dependency must match this pin.
+    for name in names:
+        for dependency in DEPENDENCIES.get(name, ()):
+            if dependency not in names:
+                dependency_plan = install(target, [dependency], commit)
+                if dependency_plan[0]["action"] != "unchanged":
+                    raise ValueError(f"Select dependency {dependency} explicitly with {name}")
     # Validate the whole selection before any writes. Existing copies are never overwritten.
     if apply:
         target.mkdir(parents=True, exist_ok=True)

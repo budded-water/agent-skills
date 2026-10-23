@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["reviewers"],
+  "additionalProperties": false,
+  "properties": {
+    "reviewers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["observed_at", "slack_user_id", "accepted_senders", "result_ledgers", "verdicts", "watches_new_pushes"],
+        "additionalProperties": false,
+        "properties": {
+          "observed_at": { "type": "string", "format": "date-time" },
+          "slack_user_id": { "type": "string", "pattern": "^[UW][A-Z0-9]+$" },
+          "github_login": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$" },
+          "accepted_senders": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "result_ledgers": {
+            "type": "array",
+            "items": { "enum": ["github_review", "github_comment", "slack"] },
+            "minItems": 1
+          },
+          "verdicts": {
+            "type": "array",
+            "items": { "enum": ["approved", "with_findings", "no_verdict"] },
+            "minItems": 1
+          },
+          "watches_new_pushes": { "type": "boolean" },
+          "structured_output": { "enum": ["supported", "not_observed", "unknown"] },
+          "host": {
+            "type": "object",
+            "required": ["observed_at", "slack_user_id", "role", "evidence_url"],
+            "additionalProperties": false,
+            "properties": {
+              "observed_at": { "type": "string", "format": "date-time" },
+              "slack_user_id": { "type": "string", "pattern": "^U[A-Z0-9]+$" },
+              "role": { "enum": ["operator", "owner"] },
+              "evidence_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+              "notes": { "type": "string" }
+            }
+          },
+          "notes": { "type": "string" }
+        },
+        "allOf": [{
+          "if": {
+            "properties": {
+              "result_ledgers": {
+                "contains": { "enum": ["github_review", "github_comment"] }
+              }
+            }
+          },
+          "then": { "required": ["github_login"] }
+        }]
+      }
+    }
+  }
+}
